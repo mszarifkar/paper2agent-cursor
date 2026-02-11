@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+*-env/
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project-specific generated files
+reports/coverage/htmlcov/
+reports/coverage/*.xml
+reports/coverage/*.json
+reports/coverage/pytest_output.txt
+reports/coverage/coverage_summary.txt
+tests/logs/*.log
+*.pytest_cache/
+.pytest_cache/
+
+# Test project directories (don't commit test projects)
+*-mpc/
+minimal-test-repo-mpc/
+panpipes-mpc/
+alphagenome-mpc/
+tissue-mpc/
+scanpy-mpc/
+
+# Personal/test data
+notebooks/
+tests/results/
+tests/data/
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports (keep structure, ignore generated files)
+reports/coverage/*.xml
+reports/coverage/*.json
+reports/coverage/htmlcov/
+reports/coverage/pytest_output.txt
+
+# Quality reports (keep structure, ignore generated files)
+reports/quality/pylint/*.txt
+reports/quality/pylint/*.md
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Local configuration
+config.local.json
+settings.local.json
+
