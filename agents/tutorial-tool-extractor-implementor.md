@@ -561,7 +561,7 @@ method: Annotated[str, "Analysis method"] = "default"  # Use actual tutorial met
 **Return Format** (STRICT)
 Every tool returns a dict with this exact structure:
 ```python
-{
+return {
     "message": "<status message ≤120 chars>",
     "reference": "https://github.com/<github_repo_name>/.../<tutorial_name>.<ext>", 
     "artifacts": [
@@ -572,6 +572,13 @@ Every tool returns a dict with this exact structure:
     ]
 }
 ```
+
+**CRITICAL FORMATTING REQUIREMENTS:**
+- Use actual newlines (not literal `\`n` or `\\n` strings)
+- Proper Python indentation (4 spaces)
+- Exactly 2 newlines between function definitions
+- No concatenated code without proper spacing
+
 The reference link comes `http_url`from the `reports/executed_notebooks.json` file for each tutorial.
 
 ### Step 3.6: Documentation Standards
@@ -613,6 +620,23 @@ def cluster_cells(...):
 2. **Exact Function Call Preservation**: Preserve the exact function calls from the tutorial. If tutorial shows `sc.tl.pca(adata)`, use exactly that - don't add `n_comps` or other parameters.
 3. **Data Flow Adaptation**: Replace tutorial's data loading with user-provided input handling
 4. **Output Path Management**: Replace hardcoded output paths with parameterized paths using `out_prefix` and timestamp
+
+**Dependency Tracking & Variable Scope**
+1. **Analyze Notebook Cells Sequentially**: Build a dependency graph by analyzing all notebook cells in order
+2. **Track Variable Definitions**: Identify where each variable is defined (which cell)
+3. **Identify Variable Usage**: For each tool function, identify all variables used
+4. **Include Required Initialization**: If a variable used in a tool function is defined in an earlier cell, include that initialization code in the tool function
+5. **Variable Scope Analysis**: Ensure all variables used in a tool function are either:
+   - Defined within the function
+   - Loaded from user input (e.g., `adata = sc.read_h5ad(data_path)`)
+   - Included from earlier cells (if needed for the tool to work)
+6. **Example**: If `pbmc` is used in a tool but defined in an earlier cell, include the initialization code:
+   ```python
+   # Include initialization from earlier cells if needed
+   pbmc = sc.read_h5ad(data_path)  # or whatever initialization was in earlier cell
+   # Then use pbmc in the tool code
+   ```
+7. **Validation**: After extraction, verify no undefined variables exist in generated code
 
 **Implementation Requirements**
 - **No Mock Data**: Never use mock data, placeholder data, or simulation functions in production code. Mock data is not acceptable in any form and must never be used. However, if the tutorial used specific simulated data, it's acceptable to use that exact same simulated data from the tutorial, but never create or simulate your own new data
@@ -731,6 +755,8 @@ Evaluate each extracted tool with this checklist. Use [✓] to mark success and 
 - [ ] **Template Compliance**: Follows implementation template structure exactly
 - [ ] **Import Management**: All required imports present and correct
 - [ ] **Environment Setup**: Proper directory structure and environment variable handling
+- [ ] **Import Detection**: All used symbols have corresponding imports (use AST to detect missing imports)
+- [ ] **Common Libraries**: Check for matplotlib.pyplot (as plt), numpy (as np), pandas (as pd), etc.
 
 **For each failed check:** Document the specific issue and create an action item for resolution.
 
@@ -825,4 +851,112 @@ def <tool_name>(
 **Template Notes:**
 - The reference link comes from the `http_url` field in the `reports/executed_notebooks.json` file for each tutorial
 - Use the File Input Parameter Guidelines above for proper data_path parameter formatting
+
+### Step 3.8: Code Validation & Formatting
+
+**CRITICAL: Before saving any generated code, you MUST validate it:**
+
+1. **Syntax Validation**: Parse generated code with Python's `ast.parse()` to ensure it's valid Python
+   ```python
+   import ast
+   try:
+       ast.parse(generated_code)
+   except SyntaxError as e:
+       # Fix syntax errors before saving
+   ```
+
+2. **Formatting Requirements**:
+   - Use actual newlines (not literal `\`n` strings) in return statements
+   - Exactly 2 newlines between function definitions
+   - Proper Python indentation (4 spaces)
+   - No concatenated code without proper spacing
+
+3. **Return Statement Format**: Must use proper Python formatting:
+   ```python
+   return {
+       "message": "...",
+       "reference": "...",
+       "artifacts": [...]
+   }
+   ```
+   NOT: `return {`n        "message": ...`n    }}`
+
+4. **Function Separation**: Ensure proper spacing:
+   ```python
+   }
+   
+   @tutorial_mcp.tool()
+   def next_function(...):
+   ```
+   NOT: `}@tutorial_mcp.tool()\ndef next_function(...):`
+
+5. **Import Detection & Validation**:
+   - Use AST to analyze code and detect all used symbols
+   - Check for common library patterns:
+     - `plt` → requires `import matplotlib.pyplot as plt`
+     - `np` → requires `import numpy as np`
+     - `pd` → requires `import pandas as pd`
+     - `sc` → requires `import scanpy as sc` (or appropriate library)
+     - `ad` → requires `import anndata as ad` (or appropriate library)
+   - Automatically add missing imports at module level
+   - Verify all used symbols have corresponding imports
+   - Common imports to check:
+     ```python
+     import matplotlib.pyplot as plt  # if plt is used
+     import numpy as np  # if np is used
+     import pandas as pd  # if pd is used
+     from pathlib import Path  # if Path is used
+     ```
+
+6. **MCP Compliance Validation**:
+   - **Tool Name Length**: All tool function names must be ≤ 128 characters (MCP standard)
+     - Check each function name: `len(function_name) <= 128`
+     - If a name exceeds 128 chars, shorten it while preserving meaning
+   - **Tool Name Uniqueness**: Check for duplicate tool names across all modules
+     - Scan all `src/tools/*.py` files for tool function names
+     - If duplicates found, add module prefix: `{module_name}_{original_name}`
+     - Example: If `scanpy_visualize_genes` exists in multiple modules, rename to `{module}_scanpy_visualize_genes`
+   - **Validation Commands**:
+     ```bash
+     # Check tool name lengths
+     grep -r "@.*_mcp.tool" src/tools/ | grep -oP 'def \K\w+' | while read name; do
+       if [ ${#name} -gt 128 ]; then
+         echo "ERROR: Tool name '$name' exceeds 128 characters"
+       fi
+     done
+     
+     # Check for duplicate tool names
+     grep -r "@.*_mcp.tool" src/tools/ | grep -oP 'def \K\w+' | sort | uniq -d
+     ```
+   - **Generate Compliance Report**: List all tool names, lengths, and any duplicates found
+
+7. **Personal Information Sanitization**:
+   - After generating code, sanitize all files to remove personal information:
+     ```bash
+     python tools/personal_info_sanitizer.py src/tools/ --recursive --report
+     ```
+   - This removes:
+     - User-specific paths (Windows: `C:\Users\...`, Unix: `/home/...`)
+     - Email addresses
+     - Usernames in paths/comments
+     - API keys/tokens
+     - IP addresses (except localhost)
+   - Review sanitization report to ensure no personal info leaks
+
+8. **Validation Checklist**:
+   - [ ] Code parses successfully with `ast.parse()`
+   - [ ] No literal `\`n` strings in return statements
+   - [ ] Proper newlines between functions (2 newlines)
+   - [ ] All imports are valid and used
+   - [ ] All used symbols have corresponding imports (check with AST)
+   - [ ] No syntax errors
+   - [ ] No undefined variables (all variables have imports or definitions)
+   - [ ] All tool names ≤ 128 characters
+   - [ ] No duplicate tool names across modules
+   - [ ] MCP compliance report generated
+   - [ ] Personal information sanitized (paths, emails, usernames, API keys removed)
+   - [ ] Sanitization report reviewed
+
+**If validation fails**: Fix the code before saving. Do not save invalid Python code or code containing personal information.
+
 ---

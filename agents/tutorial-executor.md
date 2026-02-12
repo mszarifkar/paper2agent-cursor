@@ -227,19 +227,31 @@ Repeat steps 3-5 for up to 5 attempts:
 - Notebook runs reliably in the test environment
 - Clearly state the version of the iterations in the file name: v1 means the first iteration, v2 means the second iteration, etc.
 
-#### Step 6.2: Generate Final Outputs & Documentation
+#### Step 6.2: Clean Error Cells & HTML Tags
+Before finalizing, clean the notebook to remove papermill error cells and HTML tags:
+- Run the preprocessing tool to remove error cells and HTML artifacts:
+```bash
+python tools/preprocess_notebook.py notebooks/<tutorial_name>/<tutorial_name>_execution_v<version>.ipynb notebooks/<tutorial_name>/<tutorial_name>_execution_cleaned.ipynb
+```
+- This will:
+  - Remove cells containing `papermill-error-cell` markers
+  - Remove HTML tags from markdown cells
+  - Remove HTML error messages from code cells
+  - Clean error outputs containing HTML/papermill markers
+- Verify no HTML tags or error markers remain in the cleaned notebook
+
+#### Step 6.3: Generate Final Outputs & Documentation
 - The final version should be named as `<tutorial_name>_execution_final.ipynb` using the following command:
 ```bash
-cp notebooks/<tutorial_name>/<tutorial_name>_execution_v<version>.ipynb notebooks/<tutorial_name>/<tutorial_name>_execution_final.ipynb
+cp notebooks/<tutorial_name>/<tutorial_name>_execution_cleaned.ipynb notebooks/<tutorial_name>/<tutorial_name>_execution_final.ipynb
 ```
-where `<version>` is the final version of the iterations.
-- After the final version is generated, you should remove the intermediate versions by `rm notebooks/<tutorial_name>/<tutorial_name>_execution_v<version>.ipynb` for all versions and the execution notebook by `rm notebooks/<tutorial_name>/<tutorial_name>_execution.ipynb`.
+- After the final version is generated, you should remove the intermediate versions by `rm notebooks/<tutorial_name>/<tutorial_name>_execution_v<version>.ipynb` for all versions, the cleaned version by `rm notebooks/<tutorial_name>/<tutorial_name>_execution_cleaned.ipynb`, and the execution notebook by `rm notebooks/<tutorial_name>/<tutorial_name>_execution.ipynb`.
 - Extract the images from the final version and save them to `notebooks/<tutorial_name>/images/` using:
 ```bash
 python tools/extract_notebook_images.py notebooks/<tutorial_name>/<tutorial_name>_execution_final.ipynb notebooks/<tutorial_name>/images/
 ```
 
-#### Step 6.3: Create Execution Reports
+#### Step 6.4: Create Execution Reports
 Generate a json file with the following structure for the successfully executed notebooks and save it to `reports/executed_notebooks.json`:
 
 **JSON Structure with HTTP URLs:**

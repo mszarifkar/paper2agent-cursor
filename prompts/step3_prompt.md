@@ -71,6 +71,10 @@ Task: tutorial-tool-extractor-implementor
 - **Verify Tutorial Fidelity**: Check that function calls exactly match tutorial (no added parameters)
 - **Verify Structure Preservation**: Ensure exact tutorial data structures are preserved
 - **Count Functions**: For each tutorial file, run `grep "@<tutorial_file_name>_mcp.tool" src/tools/<tutorial_file_name>.py | wc -l` to determine number of test files needed
+- **Code Validation**: Validate all generated code with `ast.parse()` before saving - ensure proper Python formatting with actual newlines (not literal `\`n` strings)
+- **Function Separation**: Ensure exactly 2 newlines between function definitions
+- **MCP Compliance**: Verify all tool names ≤ 128 characters and no duplicate names across modules
+- **Personal Information Sanitization**: After extraction, run `python tools/personal_info_sanitizer.py src/tools/ --recursive --report` to remove personal info (paths, emails, usernames, API keys, IPs)
 
 ### Phase 2: Parallel Testing, Verification & Improvement
 

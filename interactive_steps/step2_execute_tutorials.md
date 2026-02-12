@@ -60,10 +60,22 @@ Follow the instructions from `agents/tutorial-executor.md` and `prompts/step2_pr
    - Save to `notebooks/[tutorial_name]/images/`
    - Verify images match tutorial outputs
 
-5. **Create Final Notebook**:
-   - Save executed notebook as `[tutorial_name]_execution_final.ipynb`
+5. **Clean Error Cells & Sanitize**:
+   - Remove papermill error cells and HTML tags:
+     ```bash
+     python tools/preprocess_notebook.py notebooks/[tutorial_name]/[tutorial_name]_execution.ipynb notebooks/[tutorial_name]/[tutorial_name]_execution_cleaned.ipynb
+     ```
+   - Sanitize personal information from notebook:
+     ```bash
+     python tools/personal_info_sanitizer.py notebooks/[tutorial_name]/[tutorial_name]_execution_cleaned.ipynb
+     ```
+   - This removes user paths, emails, usernames, API keys, and IP addresses
+
+6. **Create Final Notebook**:
+   - Save cleaned notebook as `[tutorial_name]_execution_final.ipynb`
    - Ensure all cells executed successfully
    - Preserve outputs for reference
+   - Verify no personal information remains
 
 ### File Naming Convention
 
@@ -133,7 +145,17 @@ After executing this step, you should have:
 
 To verify this step completed successfully:
 
-1. **Check Notebook Execution**:
+1. **Check Error Cell Removal**:
+   - Verify no `papermill-error-cell` markers in final notebook
+   - Check for HTML tags in markdown cells
+   - Ensure error cells were removed during preprocessing
+
+2. **Check Personal Information**:
+   - Run: `python tools/personal_info_sanitizer.py notebooks/[tutorial_name]/[tutorial_name]_execution_final.ipynb --report`
+   - Review sanitization report
+   - Verify no user paths, emails, usernames, or API keys remain
+
+3. **Check Notebook Execution**:
    ```bash
    # Verify notebooks exist and executed successfully
    ls notebooks/*/*_execution_final.ipynb

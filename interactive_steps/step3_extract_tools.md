@@ -56,12 +56,41 @@ For each tutorial file in `executed_notebooks.json`, extract tools following ins
    - At end of file, create: `[tutorial_name]_mcp = FastMCP(name="[tutorial_name]")`
    - Register all tools with this instance
 
+5. **Code Validation**:
+   - Validate generated code with `ast.parse()` before saving
+   - Ensure proper Python formatting:
+     - Use actual newlines in return statements (not literal `\`n` strings)
+     - Exactly 2 newlines between function definitions
+     - Proper indentation (4 spaces)
+   - Fix any syntax errors before saving
+
+6. **MCP Compliance**:
+   - Check all tool names are ≤ 128 characters
+   - Detect duplicate tool names across modules
+   - Add module prefix to duplicates if needed
+   - Generate compliance report
+
+7. **Personal Information Sanitization**:
+   - After code extraction, sanitize all generated files:
+     ```bash
+     python tools/personal_info_sanitizer.py src/tools/ --recursive --report
+     ```
+   - This removes/replaces:
+     - User-specific file paths (C:\Users\..., /home/...)
+     - Email addresses
+     - Usernames
+     - API keys/tokens
+     - IP addresses (except localhost)
+   - Review sanitization report to verify no personal info remains
+
 ### Critical Rules:
 - NEVER add function parameters not in original tutorial
 - PRESERVE exact tutorial structure - no generalized patterns
 - Basic input file validation only
 - Extract ALL tutorial sections from same source file into single output file
 - Order tools same as sections in tutorial
+- **Code Formatting**: Use actual newlines (not `\`n` strings), 2 newlines between functions
+- **Syntax Validation**: Validate all code with `ast.parse()` before saving
 
 ## Phase 2: Test Creation
 
@@ -172,6 +201,29 @@ To verify this step completed successfully:
 
 ## Troubleshooting
 
+### Code Generation Issues
+
+**Problem**: Syntax errors in generated code
+- **Solution**: Validate code with `ast.parse()` before saving
+- **Solution**: Check for literal `\`n` strings in return statements - replace with actual newlines
+- **Solution**: Ensure proper newline separation (2 newlines) between functions
+- **Solution**: Run `python tools/code_postprocessor.py src/tools/` to fix formatting
+
+**Problem**: Missing imports causing NameError
+- **Solution**: Use AST to detect all used symbols
+- **Solution**: Check for common patterns: `plt` → `import matplotlib.pyplot as plt`, `np` → `import numpy as np`
+- **Solution**: Add missing imports at module level
+
+**Problem**: Undefined variables in generated code
+- **Solution**: Track variable dependencies across notebook cells
+- **Solution**: Include required initialization code from earlier cells
+- **Solution**: Verify all variables are either imported or defined in function
+
+**Problem**: Papermill error cells in generated code
+- **Solution**: Run `python tools/preprocess_notebook.py` to clean notebooks before extraction
+- **Solution**: Check for HTML tags and error markers in code
+- **Solution**: Remove cells containing `papermill-error-cell` markers
+
 ### Tool Extraction Issues
 
 **Problem**: Tools don't match tutorial exactly
@@ -183,6 +235,23 @@ To verify this step completed successfully:
 - **Solution**: Extract all sections into single `src/tools/[tutorial_name].py`
 - **Solution**: Each section becomes one tool function
 - **Solution**: Maintain order from tutorial
+
+**Problem**: Tool names exceed 128 characters
+- **Solution**: Shorten tool names while preserving meaning
+- **Solution**: Check MCP compliance: `grep -r "@.*_mcp.tool" src/tools/ | grep -oP 'def \K\w+' | while read name; do [ ${#name} -gt 128 ] && echo "$name"; done`
+- **Solution**: Use abbreviations for common terms
+
+**Problem**: Duplicate tool names across modules
+- **Solution**: Add module prefix to duplicate names
+- **Solution**: Check for duplicates: `grep -r "@.*_mcp.tool" src/tools/ | grep -oP 'def \K\w+' | sort | uniq -d`
+
+### Personal Information Issues
+
+**Problem**: Personal information in generated code
+- **Solution**: Run sanitization: `python tools/personal_info_sanitizer.py src/tools/ --recursive --report`
+- **Solution**: Review sanitization report to verify removals
+- **Solution**: Check for user paths, emails, usernames, API keys, IP addresses
+- **Solution**: Configure custom patterns in `.paper2agent-sanitize.yaml` if needed
 
 ### Test Issues
 

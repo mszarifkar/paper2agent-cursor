@@ -168,6 +168,26 @@ Use the [PROGRESS.md](PROGRESS.md) template to track your progress through each 
 - **Solution**: Check file naming conventions
 - **Solution**: Verify you're following instructions exactly
 
+**Problem**: Syntax errors in generated code
+- **Solution**: Run `python tools/code_postprocessor.py src/tools/` to validate and fix formatting
+- **Solution**: Check for literal `\`n` strings in return statements
+- **Solution**: Ensure proper newline separation between functions
+
+**Problem**: Missing imports in generated code
+- **Solution**: Use AST-based import detection to identify missing imports
+- **Solution**: Check common patterns: `plt` → `matplotlib.pyplot`, `np` → `numpy`, `pd` → `pandas`
+- **Solution**: Add missing imports at module level
+
+**Problem**: Personal information in generated code
+- **Solution**: Run `python tools/personal_info_sanitizer.py src/tools/ --recursive --report`
+- **Solution**: Review sanitization report
+- **Solution**: Configure `.paper2agent-sanitize.yaml` for custom patterns if needed
+
+**Problem**: Tool names exceed 128 characters or duplicates exist
+- **Solution**: Check MCP compliance: verify tool name lengths
+- **Solution**: Add module prefix to duplicate tool names
+- **Solution**: Shorten tool names while preserving meaning
+
 ### Getting Help
 
 1. Review the troubleshooting section in each step guide

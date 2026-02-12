@@ -79,3 +79,8 @@ reports/quality/pylint/*.md
 config.local.json
 settings.local.json
 
+# Sanitization configuration (may contain sensitive patterns)
+.paper2agent-sanitize.yaml
+sanitization_report.txt
+
+

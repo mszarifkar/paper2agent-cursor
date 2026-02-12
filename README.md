@@ -13,6 +13,9 @@ Paper2Agent-Cursor provides an interactive workflow for building MCP (Model Cont
 - **Same Output Structure**: Compatible with original Paper2Agent outputs
 - **Cost Effective**: No per-repository API costs
 - **Full Control**: Review and approve each step before proceeding
+- **Code Quality**: Automatic syntax validation, import detection, and formatting
+- **Privacy Protection**: Automatic sanitization of personal information (paths, emails, API keys)
+- **MCP Compliance**: Tool name validation and duplicate detection
 
 ## Prerequisites
 
@@ -119,7 +122,9 @@ paper2agent-cursor/
 │   └── 06_launch_mcp.sh
 └── tools/                       # Utility scripts
     ├── extract_notebook_images.py
-    └── preprocess_notebook.py
+    ├── preprocess_notebook.py
+    ├── code_postprocessor.py     # Code validation and formatting
+    └── personal_info_sanitizer.py  # Personal information sanitization
 ```
 
 ## Usage Example
@@ -170,6 +175,9 @@ Common issues:
 - **Cursor Composer prompt issues**: Check file paths and directory structure
 - **Step failures**: Review troubleshooting section in step guide
 - **Output mismatches**: Verify you're following instructions exactly
+- **Syntax errors**: Run `python tools/code_postprocessor.py src/tools/` to validate and fix formatting
+- **Missing imports**: Use AST-based import detection to identify and add missing imports
+- **Personal information**: Run `python tools/personal_info_sanitizer.py src/tools/ --recursive --report` to sanitize code
 
 ## Comparison with Original Paper2Agent
 
@@ -210,6 +218,10 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - [Paper2Agent](https://github.com/jmiao24/Paper2Agent) - Original automated version
 - [FastMCP](https://github.com/jlowin/fastmcp) - MCP server framework
 - [MCP Protocol](https://modelcontextprotocol.io/) - Model Context Protocol specification
+
+## Security & Privacy
+
+See [SECURITY.md](SECURITY.md) for information about personal information sanitization and privacy protection features.
 
 ## Support
 
